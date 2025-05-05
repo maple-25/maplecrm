@@ -7,13 +7,14 @@ import { format } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 interface ProjectFormProps {
@@ -458,9 +459,9 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
                       <SelectItem value="no">No</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>
+                  <p className="text-sm text-muted-foreground">
                     Does this project have an invoice?
-                  </FormDescription>
+                  </p>
                 </FormItem>
               )}
             />
