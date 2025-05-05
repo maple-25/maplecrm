@@ -121,11 +121,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Handle hasInvoice as boolean
+      // Handle hasInvoice as string (yes/no)
       if (data.hasInvoice !== undefined) {
-        data.hasInvoice = data.hasInvoice === true || 
-                        data.hasInvoice === 'true' || 
-                        data.hasInvoice === 1;
+        // Convert any boolean or truthy values to string yes/no format
+        if (typeof data.hasInvoice === 'boolean') {
+          data.hasInvoice = data.hasInvoice ? "yes" : "no";
+        } else if (typeof data.hasInvoice === 'number') {
+          data.hasInvoice = data.hasInvoice > 0 ? "yes" : "no";
+        } else if (typeof data.hasInvoice === 'string') {
+          if (data.hasInvoice.toLowerCase() === 'true') {
+            data.hasInvoice = "yes";
+          } else if (data.hasInvoice.toLowerCase() === 'false') {
+            data.hasInvoice = "no";
+          }
+          // If it's already "yes" or "no", it will remain unchanged
+        }
       }
       
       console.log("Creating project with processed data:", data);
@@ -164,11 +174,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Handle hasInvoice as boolean
+      // Handle hasInvoice as string (yes/no)
       if (data.hasInvoice !== undefined) {
-        data.hasInvoice = data.hasInvoice === true || 
-                        data.hasInvoice === 'true' || 
-                        data.hasInvoice === 1;
+        // Convert any boolean or truthy values to string yes/no format
+        if (typeof data.hasInvoice === 'boolean') {
+          data.hasInvoice = data.hasInvoice ? "yes" : "no";
+        } else if (typeof data.hasInvoice === 'number') {
+          data.hasInvoice = data.hasInvoice > 0 ? "yes" : "no";
+        } else if (typeof data.hasInvoice === 'string') {
+          if (data.hasInvoice.toLowerCase() === 'true') {
+            data.hasInvoice = "yes";
+          } else if (data.hasInvoice.toLowerCase() === 'false') {
+            data.hasInvoice = "no";
+          }
+          // If it's already "yes" or "no", it will remain unchanged
+        }
       }
       
       console.log(`Updating project ${id} with processed data:`, data);
