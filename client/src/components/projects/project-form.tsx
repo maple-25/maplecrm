@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -34,11 +34,18 @@ const projectFormSchema = z.object({
   status: z.string(),
   activeStage: z.string().optional(),
   assignedToId: z.string(),
+  clientId: z.string().optional(),
 });
 
 export default function ProjectForm({ open, onClose, project, teamMembers }: ProjectFormProps) {
   const { toast } = useToast();
   const isEdit = !!project?.id;
+  
+  // Fetch clients for the dropdown
+  const { data: clients = [] } = useQuery({
+    queryKey: ["/api/clients"],
+    enabled: open,
+  });
 
   const form = useForm<z.infer<typeof projectFormSchema>>({
     resolver: zodResolver(projectFormSchema),
@@ -53,6 +60,7 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
       status: "active",
       activeStage: "",
       assignedToId: teamMembers[0]?.id?.toString() || "",
+      clientId: "",
     },
   });
   
@@ -70,6 +78,7 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
         status: project.status || "active",
         activeStage: project.activeStage || "",
         assignedToId: project.assignedToId?.toString() || (teamMembers[0]?.id?.toString() || ""),
+        clientId: project.clientId?.toString() || "",
       });
     } else {
       form.reset({
@@ -83,24 +92,28 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
         status: "active",
         activeStage: "",
         assignedToId: teamMembers[0]?.id?.toString() || "",
+        clientId: "",
       });
     }
   }, [project, form, teamMembers]);
 
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof projectFormSchema>) => {
-      // Convert assignedToId to a number
+      // Convert assignedToId and clientId to numbers
       const assignedToId = data.assignedToId ? parseInt(data.assignedToId) : undefined;
+      const clientId = data.clientId && data.clientId !== "" ? parseInt(data.clientId) : undefined;
       
       console.log("Creating project with data:", {
         ...data,
         assignedToId,
+        clientId,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
       
       await apiRequest("POST", "/api/projects", {
         ...data,
         assignedToId,
+        clientId,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
     },
@@ -136,18 +149,21 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
 
   const updateMutation = useMutation({
     mutationFn: async (data: z.infer<typeof projectFormSchema>) => {
-      // Convert assignedToId to a number
+      // Convert assignedToId and clientId to numbers
       const assignedToId = data.assignedToId ? parseInt(data.assignedToId) : undefined;
+      const clientId = data.clientId && data.clientId !== "" ? parseInt(data.clientId) : undefined;
       
       console.log("Updating project with data:", {
         ...data,
         assignedToId,
+        clientId,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
       
       await apiRequest("PATCH", `/api/projects/${project.id}`, {
         ...data,
         assignedToId,
+        clientId,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
     },
