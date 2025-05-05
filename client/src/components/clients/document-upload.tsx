@@ -64,12 +64,31 @@ export default function DocumentUpload({ clientId }: DocumentUploadProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
+    if (!file) {
+      toast({
+        title: "Error",
+        description: "Please select a file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    // Create fresh FormData object
     const formData = new FormData();
+    
+    // Add file with the field name 'file' to match the server's expectation
     formData.append("file", file);
-    formData.append("name", fileName);
-
+    
+    // Add name field
+    formData.append("name", fileName || file.name);
+    
+    console.log("Submitting document upload with:", {
+      fileName: fileName,
+      fileType: file.type,
+      fileSize: file.size,
+      formDataEntries: [...formData.entries()].map(e => e[0])
+    });
+    
     uploadMutation.mutate(formData);
   };
 

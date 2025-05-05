@@ -151,9 +151,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(`${apiPrefix}/clients`, async (req, res) => {
     try {
+      console.log("Creating client with data:", req.body);
       const client = await storage.createClient(req.body);
+      console.log("Client created:", client);
       return res.status(201).json(client);
     } catch (err) {
+      console.error("Error creating client:", err);
       handleValidationError(err, res);
     }
   });
@@ -205,6 +208,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { clientId } = req.params;
       const file = req.file;
       
+      console.log("Document upload request:", {
+        params: req.params,
+        body: req.body,
+        file: req.file ? "File exists" : "No file"
+      });
+      
       if (!file) {
         return res.status(400).json({ message: "No file uploaded" });
       }
@@ -217,9 +226,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         clientId: parseInt(clientId)
       };
 
+      console.log("Creating document with data:", document);
       const savedDocument = await storage.createDocument(document);
       return res.status(201).json(savedDocument);
     } catch (err) {
+      console.error("Error in document upload:", err);
       handleValidationError(err, res);
     }
   });
