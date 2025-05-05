@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Projects from "@/pages/projects";
+import Invoices from "@/pages/invoices";
 import Clients from "@/pages/clients";
 import Affiliates from "@/pages/affiliates";
 import Others from "@/pages/others";
@@ -21,6 +22,7 @@ function Router() {
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/projects" component={Projects} />
+            <Route path="/invoices" component={Invoices} />
             <Route path="/clients" component={Clients} />
             <Route path="/affiliates" component={Affiliates} />
             <Route path="/others" component={Others} />
