@@ -1,16 +1,23 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClientFolder from "@/components/clients/client-folder";
 import FolderView from "@/components/clients/folder-view";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// Define schema for client creation form
+const clientFormSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters")
+});
 
 export default function Clients() {
   const [activeTab, setActiveTab] = useState("active");
@@ -18,7 +25,8 @@ export default function Clients() {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const form = useForm({
+  const form = useForm<z.infer<typeof clientFormSchema>>({
+    resolver: zodResolver(clientFormSchema),
     defaultValues: {
       name: "",
     },
@@ -32,15 +40,23 @@ export default function Clients() {
     queryKey: ["/api/clients?status=completed"],
   });
 
-  const onAddClient = async (data: { name: string }) => {
-    try {
-      await apiRequest("POST", "/api/clients", {
+  const createClientMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof clientFormSchema>) => {
+      console.log("Submitting client creation with data:", {
+        ...data,
+        status: activeTab === "active" ? "active" : "completed"
+      });
+      
+      return await apiRequest("POST", "/api/clients", {
         name: data.name,
         status: activeTab === "active" ? "active" : "completed",
       });
-      
+    },
+    onSuccess: () => {
       // Invalidate clients cache to refresh the data
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/clients?status=${activeTab}`] });
+      
       setIsAddClientOpen(false);
       form.reset();
       
@@ -48,13 +64,20 @@ export default function Clients() {
         title: "Success",
         description: "Client folder created successfully",
       });
-    } catch (error) {
+    },
+    onError: (error: any) => {
+      console.error("Error creating client:", error);
+      
       toast({
         title: "Error",
-        description: "Failed to create client folder",
+        description: error.message || "Failed to create client folder",
         variant: "destructive",
       });
     }
+  });
+  
+  const onAddClient = (data: z.infer<typeof clientFormSchema>) => {
+    createClientMutation.mutate(data);
   };
 
   const handleOpenFolder = (clientId: string) => {
@@ -150,6 +173,9 @@ export default function Clients() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Client</DialogTitle>
+            <DialogDescription>
+              Create a new client folder to store documents and track projects.
+            </DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onAddClient)} className="space-y-4">
@@ -162,15 +188,27 @@ export default function Clients() {
                     <FormControl>
                       <Input {...field} placeholder="Enter client name" />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsAddClientOpen(false)}>
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  onClick={() => {
+                    setIsAddClientOpen(false);
+                    form.reset();
+                  }}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-primary hover:bg-primary/90">
-                  Create
+                <Button 
+                  type="submit" 
+                  className="bg-primary hover:bg-primary/90"
+                  disabled={createClientMutation.isPending}
+                >
+                  {createClientMutation.isPending ? "Creating..." : "Create"}
                 </Button>
               </div>
             </form>
