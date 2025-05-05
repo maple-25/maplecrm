@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,28 +45,69 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
   const form = useForm<z.infer<typeof projectFormSchema>>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      name: project?.name || "",
-      phoneNumber: project?.phoneNumber || "",
-      poc: project?.poc || "",
-      type: project?.type || "direct",
-      affiliatePartner: project?.affiliatePartner || "",
-      category: project?.category || "",
-      lastContacted: project?.lastContacted ? new Date(project.lastContacted) : undefined,
-      status: project?.status || "active",
-      activeStage: project?.activeStage || "",
-      hasInvoice: project?.hasInvoice || false,
-      assignedToId: project?.assignedToId?.toString() || (teamMembers[0]?.id?.toString() || ""),
+      name: "",
+      phoneNumber: "",
+      poc: "",
+      type: "direct",
+      affiliatePartner: "",
+      category: "",
+      lastContacted: undefined,
+      status: "active",
+      activeStage: "",
+      hasInvoice: false,
+      assignedToId: teamMembers[0]?.id?.toString() || "",
     },
   });
+  
+  // Reset form with project data when project changes
+  useEffect(() => {
+    if (project) {
+      form.reset({
+        name: project.name || "",
+        phoneNumber: project.phoneNumber || "",
+        poc: project.poc || "",
+        type: project.type || "direct",
+        affiliatePartner: project.affiliatePartner || "",
+        category: project.category || "",
+        lastContacted: project.lastContacted ? new Date(project.lastContacted) : undefined,
+        status: project.status || "active",
+        activeStage: project.activeStage || "",
+        hasInvoice: project.hasInvoice || false,
+        assignedToId: project.assignedToId?.toString() || (teamMembers[0]?.id?.toString() || ""),
+      });
+    } else {
+      form.reset({
+        name: "",
+        phoneNumber: "",
+        poc: "",
+        type: "direct",
+        affiliatePartner: "",
+        category: "",
+        lastContacted: undefined,
+        status: "active",
+        activeStage: "",
+        hasInvoice: false,
+        assignedToId: teamMembers[0]?.id?.toString() || "",
+      });
+    }
+  }, [project, form, teamMembers]);
 
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof projectFormSchema>) => {
       // Convert assignedToId to a number
       const assignedToId = data.assignedToId ? parseInt(data.assignedToId) : undefined;
       
+      console.log("Creating project with data:", {
+        ...data,
+        assignedToId,
+        hasInvoice: data.hasInvoice,
+        lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
+      });
+      
       await apiRequest("POST", "/api/projects", {
         ...data,
         assignedToId,
+        hasInvoice: data.hasInvoice,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
     },
@@ -104,9 +146,17 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
       // Convert assignedToId to a number
       const assignedToId = data.assignedToId ? parseInt(data.assignedToId) : undefined;
       
+      console.log("Updating project with data:", {
+        ...data,
+        assignedToId,
+        hasInvoice: data.hasInvoice,
+        lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
+      });
+      
       await apiRequest("PATCH", `/api/projects/${project.id}`, {
         ...data,
         assignedToId,
+        hasInvoice: data.hasInvoice,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
     },
