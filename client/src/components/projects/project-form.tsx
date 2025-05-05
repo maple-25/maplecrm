@@ -33,7 +33,6 @@ const projectFormSchema = z.object({
   lastContacted: z.date().optional(),
   status: z.string(),
   activeStage: z.string().optional(),
-  hasInvoice: z.enum(["yes", "no"]).default("no"),
   assignedToId: z.string(),
 });
 
@@ -53,7 +52,6 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
       lastContacted: undefined,
       status: "active",
       activeStage: "",
-      hasInvoice: "no",
       assignedToId: teamMembers[0]?.id?.toString() || "",
     },
   });
@@ -71,7 +69,6 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
         lastContacted: project.lastContacted ? new Date(project.lastContacted) : undefined,
         status: project.status || "active",
         activeStage: project.activeStage || "",
-        hasInvoice: project.hasInvoice || "no",
         assignedToId: project.assignedToId?.toString() || (teamMembers[0]?.id?.toString() || ""),
       });
     } else {
@@ -85,7 +82,6 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
         lastContacted: undefined,
         status: "active",
         activeStage: "",
-        hasInvoice: "no",
         assignedToId: teamMembers[0]?.id?.toString() || "",
       });
     }
@@ -96,20 +92,15 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
       // Convert assignedToId to a number
       const assignedToId = data.assignedToId ? parseInt(data.assignedToId) : undefined;
       
-      // Ensure hasInvoice is a string value
-      const hasInvoiceValue = data.hasInvoice;
-      
       console.log("Creating project with data:", {
         ...data,
         assignedToId,
-        hasInvoice: hasInvoiceValue,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
       
       await apiRequest("POST", "/api/projects", {
         ...data,
         assignedToId,
-        hasInvoice: hasInvoiceValue,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
     },
@@ -148,20 +139,15 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
       // Convert assignedToId to a number
       const assignedToId = data.assignedToId ? parseInt(data.assignedToId) : undefined;
       
-      // Ensure hasInvoice is a string value
-      const hasInvoiceValue = data.hasInvoice;
-      
       console.log("Updating project with data:", {
         ...data,
         assignedToId,
-        hasInvoice: hasInvoiceValue,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
       
       await apiRequest("PATCH", `/api/projects/${project.id}`, {
         ...data,
         assignedToId,
-        hasInvoice: hasInvoiceValue,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
     },
@@ -443,33 +429,7 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
               />
             )}
 
-            <FormField
-              control={form.control}
-              name="hasInvoice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Has Invoice</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select option" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="yes">Yes</SelectItem>
-                      <SelectItem value="no">No</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Does this project have an invoice?
-                  </FormDescription>
-                </FormItem>
-              )}
-            />
+
 
             <FormField
               control={form.control}
