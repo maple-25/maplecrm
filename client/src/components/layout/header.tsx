@@ -10,6 +10,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import Sidebar from "./sidebar";
+import Logo from "./logo";
 
 export default function Header() {
   const [_, navigate] = useLocation();
@@ -40,7 +41,10 @@ export default function Header() {
           </Sheet>
         )}
         <div className="flex justify-between flex-1 px-4">
-          <div className="flex flex-1">
+          <div className="hidden md:flex items-center">
+            <Logo className="py-2" textClassName="text-lg" />
+          </div>
+          <div className="flex flex-1 md:pl-8">
             <form className="flex w-full md:ml-0" onSubmit={handleSearch}>
               <div className="relative w-full text-gray-400 focus-within:text-gray-600">
                 <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none">
