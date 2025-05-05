@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
@@ -20,11 +20,9 @@ export default function DocumentUpload({ clientId }: DocumentUploadProps) {
 
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      // Using custom fetch for multipart/form-data instead of apiRequest
       const res = await fetch(`/api/clients/${clientId}/documents`, {
         method: "POST",
         body: formData,
-        // Don't set Content-Type header, let the browser set it with boundary
       });
       
       if (!res.ok) {
@@ -46,6 +44,7 @@ export default function DocumentUpload({ clientId }: DocumentUploadProps) {
       });
     },
     onError: (error) => {
+      console.error("Upload error:", error);
       toast({
         title: "Error",
         description: "Failed to upload document",
@@ -82,11 +81,12 @@ export default function DocumentUpload({ clientId }: DocumentUploadProps) {
     // Add name field
     formData.append("name", fileName || file.name);
     
-    console.log("Submitting document upload with:", {
-      fileName: fileName,
+    console.log("Submitting document upload:", {
+      fileName,
       fileType: file.type,
       fileSize: file.size,
-      formDataEntries: [...formData.entries()].map(e => e[0])
+      hasFile: formData.has('file'),
+      hasName: formData.has('name')
     });
     
     uploadMutation.mutate(formData);
@@ -102,10 +102,22 @@ export default function DocumentUpload({ clientId }: DocumentUploadProps) {
         Upload Document
       </Button>
 
-      <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+      <Dialog 
+        open={isUploadOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setFile(null);
+            setFileName("");
+          }
+          setIsUploadOpen(open);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>
+              Add a document to this client's folder. Supported file types: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
@@ -119,6 +131,9 @@ export default function DocumentUpload({ clientId }: DocumentUploadProps) {
                   className="mt-1"
                   required
                 />
+                {fileName && fileName.length < 2 && (
+                  <p className="text-sm text-red-500 mt-1">Name must be at least 2 characters</p>
+                )}
               </div>
 
               <div>
@@ -128,24 +143,32 @@ export default function DocumentUpload({ clientId }: DocumentUploadProps) {
                   type="file"
                   onChange={handleFileChange}
                   className="mt-1"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
                   required
                 />
+                {!file && (
+                  <p className="text-sm text-muted-foreground mt-1">Please select a file to upload</p>
+                )}
               </div>
 
               <div className="flex justify-end space-x-2 pt-4">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsUploadOpen(false)}
+                  onClick={() => {
+                    setIsUploadOpen(false);
+                    setFile(null);
+                    setFileName("");
+                  }}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   className="bg-primary hover:bg-primary/90"
-                  disabled={!file || uploadMutation.isPending}
+                  disabled={!file || fileName.length < 2 || uploadMutation.isPending}
                 >
-                  Upload
+                  {uploadMutation.isPending ? "Uploading..." : "Upload"}
                 </Button>
               </div>
             </div>
