@@ -133,12 +133,16 @@ async function getProjectsByClientId(clientId: number) {
 
 async function createProject(data: any) {
   try {
-    // Pre-process date fields
+    // Pre-process date and boolean fields
     const processedData = {
       ...data,
       // Convert ISO string dates to Date objects or null
-      lastContacted: data.lastContacted ? new Date(data.lastContacted) : null
+      lastContacted: data.lastContacted ? new Date(data.lastContacted) : null,
+      // Ensure hasInvoice is a boolean
+      hasInvoice: data.hasInvoice ? Boolean(data.hasInvoice) : false
     };
+    
+    console.log("Creating project with processed data:", processedData);
     
     // Validate data
     const validatedData = projectInsertSchema.parse(processedData);
@@ -170,37 +174,59 @@ async function createProject(data: any) {
 }
 
 async function updateProject(id: number, data: any) {
-  // Get current project to check for changes
-  const currentProject = await db.query.projects.findFirst({
-    where: eq(projects.id, id)
-  });
+  try {
+    // Get current project to check for changes
+    const currentProject = await db.query.projects.findFirst({
+      where: eq(projects.id, id)
+    });
 
-  if (!currentProject) {
-    throw new Error(`Project with ID ${id} not found`);
+    if (!currentProject) {
+      throw new Error(`Project with ID ${id} not found`);
+    }
+    
+    // Process the data to handle date and boolean fields correctly
+    const processedData = { ...data };
+    
+    // Handle date conversion if lastContacted is provided
+    if (processedData.lastContacted) {
+      if (typeof processedData.lastContacted === 'string') {
+        processedData.lastContacted = new Date(processedData.lastContacted);
+      }
+    }
+    
+    // Handle boolean conversion for hasInvoice
+    if (processedData.hasInvoice !== undefined) {
+      processedData.hasInvoice = Boolean(processedData.hasInvoice);
+    }
+    
+    console.log("Processed update data:", processedData);
+    
+    // Update the project
+    const [updatedProject] = await db.update(projects)
+      .set(processedData)
+      .where(eq(projects.id, id))
+      .returning();
+
+    // If the project is associated with a client and the last contacted date changed, update the client
+    if (
+      updatedProject.clientId && 
+      updatedProject.lastContacted && 
+      (!currentProject.lastContacted || 
+      new Date(updatedProject.lastContacted).getTime() !== new Date(currentProject.lastContacted).getTime())
+    ) {
+      await updateClientLastContacted(updatedProject.clientId, updatedProject.lastContacted);
+    }
+
+    // If the status changed, update the client status as well
+    if (updatedProject.clientId && updatedProject.status !== currentProject.status) {
+      await updateClientStatus(updatedProject.clientId, updatedProject.status);
+    }
+
+    return updatedProject;
+  } catch (error) {
+    console.error("Error updating project:", error);
+    throw error;
   }
-
-  // Update the project
-  const [updatedProject] = await db.update(projects)
-    .set(data)
-    .where(eq(projects.id, id))
-    .returning();
-
-  // If the project is associated with a client and the last contacted date changed, update the client
-  if (
-    updatedProject.clientId && 
-    updatedProject.lastContacted && 
-    (!currentProject.lastContacted || 
-     new Date(updatedProject.lastContacted).getTime() !== new Date(currentProject.lastContacted).getTime())
-  ) {
-    await updateClientLastContacted(updatedProject.clientId, updatedProject.lastContacted);
-  }
-
-  // If the status changed, update the client status as well
-  if (updatedProject.clientId && updatedProject.status !== currentProject.status) {
-    await updateClientStatus(updatedProject.clientId, updatedProject.status);
-  }
-
-  return updatedProject;
 }
 
 async function deleteProject(id: number) {

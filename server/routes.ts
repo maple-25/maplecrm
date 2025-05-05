@@ -108,9 +108,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch(`${apiPrefix}/projects/:id`, async (req, res) => {
     try {
       const { id } = req.params;
+      console.log(`Updating project ${id} with data:`, req.body);
       const project = await storage.updateProject(parseInt(id), req.body);
       return res.json(project);
     } catch (err) {
+      console.error("Error updating project:", err);
       handleValidationError(err, res);
     }
   });
