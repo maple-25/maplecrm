@@ -96,17 +96,20 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
       // Convert assignedToId to a number
       const assignedToId = data.assignedToId ? parseInt(data.assignedToId) : undefined;
       
+      // Ensure hasInvoice is a string value
+      const hasInvoiceValue = data.hasInvoice;
+      
       console.log("Creating project with data:", {
         ...data,
         assignedToId,
-        hasInvoice: data.hasInvoice,
+        hasInvoice: hasInvoiceValue,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
       
       await apiRequest("POST", "/api/projects", {
         ...data,
         assignedToId,
-        hasInvoice: data.hasInvoice,
+        hasInvoice: hasInvoiceValue,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
     },
@@ -145,17 +148,20 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
       // Convert assignedToId to a number
       const assignedToId = data.assignedToId ? parseInt(data.assignedToId) : undefined;
       
+      // Ensure hasInvoice is a string value
+      const hasInvoiceValue = data.hasInvoice;
+      
       console.log("Updating project with data:", {
         ...data,
         assignedToId,
-        hasInvoice: data.hasInvoice,
+        hasInvoice: hasInvoiceValue,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
       
       await apiRequest("PATCH", `/api/projects/${project.id}`, {
         ...data,
         assignedToId,
-        hasInvoice: data.hasInvoice,
+        hasInvoice: hasInvoiceValue,
         lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
     },

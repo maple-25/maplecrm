@@ -161,10 +161,29 @@ async function createProject(data: any) {
       insertData.lastContacted = null;
     }
     
-    // Handle boolean
-    insertData.hasInvoice = data.hasInvoice === true || 
-                           data.hasInvoice === 'true' || 
-                           data.hasInvoice === 1;
+    // Handle hasInvoice as string (yes/no)
+    if (data.hasInvoice !== undefined) {
+      // Convert any boolean or truthy values to string yes/no format
+      if (typeof data.hasInvoice === 'boolean') {
+        insertData.hasInvoice = data.hasInvoice ? "yes" : "no";
+      } else if (typeof data.hasInvoice === 'number') {
+        insertData.hasInvoice = data.hasInvoice > 0 ? "yes" : "no";
+      } else if (typeof data.hasInvoice === 'string') {
+        if (data.hasInvoice.toLowerCase() === 'true') {
+          insertData.hasInvoice = "yes";
+        } else if (data.hasInvoice.toLowerCase() === 'false') {
+          insertData.hasInvoice = "no";
+        } else {
+          // If it's already "yes" or "no", use it directly
+          insertData.hasInvoice = data.hasInvoice;
+        }
+      } else {
+        // Default to "no" if undefined or null
+        insertData.hasInvoice = "no";
+      }
+    } else {
+      insertData.hasInvoice = "no";
+    }
     
     // Set timestamps
     insertData.createdAt = new Date();
@@ -238,9 +257,26 @@ async function updateProject(id: number, data: any) {
       }
     }
     
-    // Handle boolean conversion for hasInvoice
+    // Handle hasInvoice as string (yes/no)
     if (data.hasInvoice !== undefined) {
-      updateData.hasInvoice = data.hasInvoice === true || data.hasInvoice === 'true' || data.hasInvoice === 1;
+      // Convert any boolean or truthy values to string yes/no format
+      if (typeof data.hasInvoice === 'boolean') {
+        updateData.hasInvoice = data.hasInvoice ? "yes" : "no";
+      } else if (typeof data.hasInvoice === 'number') {
+        updateData.hasInvoice = data.hasInvoice > 0 ? "yes" : "no";
+      } else if (typeof data.hasInvoice === 'string') {
+        if (data.hasInvoice.toLowerCase() === 'true') {
+          updateData.hasInvoice = "yes";
+        } else if (data.hasInvoice.toLowerCase() === 'false') {
+          updateData.hasInvoice = "no";
+        } else {
+          // If it's already "yes" or "no", use it directly
+          updateData.hasInvoice = data.hasInvoice;
+        }
+      } else {
+        // Default to "no" if undefined or null
+        updateData.hasInvoice = "no";
+      }
     }
     
     // Handle numeric conversion
