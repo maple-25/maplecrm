@@ -98,6 +98,7 @@ export const projectInsertSchema = createInsertSchema(projects, {
   poc: (schema) => schema.optional(),
   type: (schema) => schema.min(1, "Type is required"),
   status: (schema) => schema.min(1, "Status is required"),
+  hasInvoice: (schema) => z.enum(["yes", "no"]).default("no"),
 });
 export type ProjectInsert = z.infer<typeof projectInsertSchema>;
 export type Project = typeof projects.$inferSelect;
