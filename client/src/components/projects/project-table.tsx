@@ -118,6 +118,8 @@ export default function ProjectTable({ projects, isLoading, onEdit, teamMembers 
                     <TableHead className="py-3.5 text-left text-sm font-medium text-gray-500 px-6">Type</TableHead>
                     <TableHead className="py-3.5 text-left text-sm font-medium text-gray-500 px-6">Last Contacted</TableHead>
                     <TableHead className="py-3.5 text-left text-sm font-medium text-gray-500 px-6">Status</TableHead>
+                    <TableHead className="py-3.5 text-left text-sm font-medium text-gray-500 px-6">Stage</TableHead>
+                    <TableHead className="py-3.5 text-left text-sm font-medium text-gray-500 px-6">Invoice</TableHead>
                     <TableHead className="py-3.5 text-left text-sm font-medium text-gray-500 px-6">Assigned To</TableHead>
                     <TableHead className="relative py-3.5 px-6">
                       <span className="sr-only">Actions</span>
@@ -169,6 +171,37 @@ export default function ProjectTable({ projects, isLoading, onEdit, teamMembers 
                             >
                               {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
                             </span>
+                          </TableCell>
+                          <TableCell className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-500">
+                              {project.status === "active" && project.activeStage ? (
+                                <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                                  {project.activeStage === "nda" ? "NDA" : 
+                                   project.activeStage === "im_financial_model" ? "IM/Financial Model" :
+                                   project.activeStage === "el" ? "EL" :
+                                   project.activeStage === "term_sheet" ? "Term Sheet" :
+                                   project.activeStage === "due_diligence" ? "Due Diligence" :
+                                   project.activeStage === "agreement" ? "Agreement" :
+                                   project.activeStage === "investor_tracker" ? "Investor Tracker" :
+                                   project.activeStage}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-500">
+                              {project.hasInvoice ? (
+                                <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                  Yes
+                                </span>
+                              ) : (
+                                <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+                                  No
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">

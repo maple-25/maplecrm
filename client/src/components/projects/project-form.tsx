@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 interface ProjectFormProps {
@@ -51,6 +52,8 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
       category: project?.category || "",
       lastContacted: project?.lastContacted ? new Date(project.lastContacted) : undefined,
       status: project?.status || "active",
+      activeStage: project?.activeStage || "",
+      hasInvoice: project?.hasInvoice || false,
       assignedToId: project?.assignedToId?.toString() || (teamMembers[0]?.id?.toString() || ""),
     },
   });
@@ -149,6 +152,7 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
 
   const showAffiliateFields = form.watch("type") === "affiliate";
   const showOtherFields = form.watch("type") === "other";
+  const isStatusActive = form.watch("status") === "active";
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -351,6 +355,61 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
                 )}
               />
             </div>
+
+            {isStatusActive && (
+              <FormField
+                control={form.control}
+                name="activeStage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Active Stage</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select stage" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="nda">NDA</SelectItem>
+                        <SelectItem value="im_financial_model">IM/Financial Model</SelectItem>
+                        <SelectItem value="el">EL</SelectItem>
+                        <SelectItem value="term_sheet">Term Sheet</SelectItem>
+                        <SelectItem value="due_diligence">Due Diligence</SelectItem>
+                        <SelectItem value="agreement">Agreement</SelectItem>
+                        <SelectItem value="investor_tracker">Investor Tracker</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={form.control}
+              name="hasInvoice"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Invoice
+                    </FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Check if this project has an invoice
+                    </p>
+                  </div>
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
