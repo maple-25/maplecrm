@@ -99,6 +99,7 @@ export const projectInsertSchema = createInsertSchema(projects, {
   type: (schema) => schema.min(1, "Type is required"),
   status: (schema) => schema.min(1, "Status is required"),
   hasInvoice: (schema) => z.enum(["yes", "no"]).default("no"),
+  clientId: (schema) => schema.optional(),
 });
 export type ProjectInsert = z.infer<typeof projectInsertSchema>;
 export type Project = typeof projects.$inferSelect;

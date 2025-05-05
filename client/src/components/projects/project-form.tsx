@@ -449,6 +449,38 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
 
             <FormField
               control={form.control}
+              name="clientId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Client</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select client (optional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {Array.isArray(clients) && clients.map((client: any) => (
+                        <SelectItem key={client.id} value={client.id.toString()}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Link this project to a client
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="assignedToId"
               render={({ field }) => (
                 <FormItem>
