@@ -55,9 +55,13 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
 
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof projectFormSchema>) => {
+      // Convert assignedToId to a number
+      const assignedToId = data.assignedToId ? parseInt(data.assignedToId) : undefined;
+      
       await apiRequest("POST", "/api/projects", {
         ...data,
-        lastContacted: data.lastContacted ? format(data.lastContacted, "yyyy-MM-dd") : null,
+        assignedToId,
+        lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
     },
     onSuccess: () => {
@@ -92,9 +96,13 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
 
   const updateMutation = useMutation({
     mutationFn: async (data: z.infer<typeof projectFormSchema>) => {
+      // Convert assignedToId to a number
+      const assignedToId = data.assignedToId ? parseInt(data.assignedToId) : undefined;
+      
       await apiRequest("PATCH", `/api/projects/${project.id}`, {
         ...data,
-        lastContacted: data.lastContacted ? format(data.lastContacted, "yyyy-MM-dd") : null,
+        assignedToId,
+        lastContacted: data.lastContacted ? data.lastContacted.toISOString() : null,
       });
     },
     onSuccess: () => {
