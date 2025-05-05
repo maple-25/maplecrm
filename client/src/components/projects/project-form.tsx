@@ -72,7 +72,7 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
         lastContacted: project.lastContacted ? new Date(project.lastContacted) : undefined,
         status: project.status || "active",
         activeStage: project.activeStage || "",
-        hasInvoice: project.hasInvoice || false,
+        hasInvoice: Boolean(project.hasInvoice),
         assignedToId: project.assignedToId?.toString() || (teamMembers[0]?.id?.toString() || ""),
       });
     } else {

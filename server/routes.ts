@@ -98,9 +98,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(`${apiPrefix}/projects`, async (req, res) => {
     try {
-      const project = await storage.createProject(req.body);
+      // Process the data for proper type handling
+      const data = { ...req.body };
+      
+      // Handle lastContacted conversion if provided
+      if (data.lastContacted) {
+        try {
+          if (typeof data.lastContacted === 'string') {
+            // Try to create a valid date object from the string
+            const dateObj = new Date(data.lastContacted);
+            if (!isNaN(dateObj.getTime())) {
+              data.lastContacted = dateObj;
+            } else {
+              // If date is invalid, set to null
+              console.log("Invalid date received:", data.lastContacted);
+              data.lastContacted = null;
+            }
+          }
+        } catch (dateErr) {
+          console.error("Error parsing date:", dateErr);
+          data.lastContacted = null;
+        }
+      }
+      
+      // Handle hasInvoice as boolean
+      if (data.hasInvoice !== undefined) {
+        data.hasInvoice = data.hasInvoice === true || 
+                        data.hasInvoice === 'true' || 
+                        data.hasInvoice === 1;
+      }
+      
+      console.log("Creating project with processed data:", data);
+      const project = await storage.createProject(data);
       return res.status(201).json(project);
     } catch (err) {
+      console.error("Error creating project:", err);
       handleValidationError(err, res);
     }
   });
@@ -108,8 +140,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch(`${apiPrefix}/projects/:id`, async (req, res) => {
     try {
       const { id } = req.params;
-      console.log(`Updating project ${id} with data:`, req.body);
-      const project = await storage.updateProject(parseInt(id), req.body);
+      
+      // Process the data for proper type handling
+      const data = { ...req.body };
+      
+      // Handle lastContacted conversion if provided
+      if (data.lastContacted) {
+        try {
+          if (typeof data.lastContacted === 'string') {
+            // Try to create a valid date object from the string
+            const dateObj = new Date(data.lastContacted);
+            if (!isNaN(dateObj.getTime())) {
+              data.lastContacted = dateObj;
+            } else {
+              // If date is invalid, set to null
+              console.log("Invalid date received:", data.lastContacted);
+              data.lastContacted = null;
+            }
+          }
+        } catch (dateErr) {
+          console.error("Error parsing date:", dateErr);
+          data.lastContacted = null;
+        }
+      }
+      
+      // Handle hasInvoice as boolean
+      if (data.hasInvoice !== undefined) {
+        data.hasInvoice = data.hasInvoice === true || 
+                        data.hasInvoice === 'true' || 
+                        data.hasInvoice === 1;
+      }
+      
+      console.log(`Updating project ${id} with processed data:`, data);
+      const project = await storage.updateProject(parseInt(id), data);
       return res.json(project);
     } catch (err) {
       console.error("Error updating project:", err);
