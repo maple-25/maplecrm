@@ -26,7 +26,7 @@ export const projects = pgTable("projects", {
   lastContacted: timestamp("last_contacted"),
   status: text("status").notNull().default("active"), // active, pending, completed, on-hold
   activeStage: text("active_stage"), // NDA, IM/Financial Model, EL, Term Sheet, Due Diligence, Agreement, Investor Tracker
-  hasInvoice: boolean("has_invoice").default(false),
+  hasInvoice: text("has_invoice").default("no"),
   assignedToId: integer("assigned_to_id").references(() => teamMembers.id).notNull(),
   clientId: integer("client_id").references(() => clients.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
