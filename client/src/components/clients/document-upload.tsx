@@ -20,7 +20,19 @@ export default function DocumentUpload({ clientId }: DocumentUploadProps) {
 
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      await apiRequest("POST", `/api/clients/${clientId}/documents`, formData);
+      // Using custom fetch for multipart/form-data instead of apiRequest
+      const res = await fetch(`/api/clients/${clientId}/documents`, {
+        method: "POST",
+        body: formData,
+        // Don't set Content-Type header, let the browser set it with boundary
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to upload document");
+      }
+      
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/clients/${clientId}/documents`] });

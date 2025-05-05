@@ -132,29 +132,41 @@ async function getProjectsByClientId(clientId: number) {
 }
 
 async function createProject(data: any) {
-  // Validate data
-  const validatedData = projectInsertSchema.parse(data);
-  
-  // Handle client association: if it's a new direct project with no client, we might want to create one
-  if (data.type === 'direct' && !data.clientId && data.name) {
-    const [newClient] = await db.insert(clients).values({
-      name: data.name,
-      status: data.status,
-      lastContacted: data.lastContacted
-    }).returning();
+  try {
+    // Pre-process date fields
+    const processedData = {
+      ...data,
+      // Convert ISO string dates to Date objects or null
+      lastContacted: data.lastContacted ? new Date(data.lastContacted) : null
+    };
     
-    validatedData.clientId = newClient.id;
-  }
+    // Validate data
+    const validatedData = projectInsertSchema.parse(processedData);
+    
+    // Handle client association: if it's a new direct project with no client, we might want to create one
+    if (data.type === 'direct' && !data.clientId && data.name) {
+      const [newClient] = await db.insert(clients).values({
+        name: data.name,
+        status: data.status,
+        lastContacted: processedData.lastContacted
+      }).returning();
+      
+      validatedData.clientId = newClient.id;
+    }
 
-  // Insert project and return it
-  const [newProject] = await db.insert(projects).values(validatedData).returning();
+    // Insert project and return it
+    const [newProject] = await db.insert(projects).values(validatedData).returning();
   
-  // If this project is associated with a client, update the client's last contacted date
-  if (newProject.clientId && newProject.lastContacted) {
-    await updateClientLastContacted(newProject.clientId, newProject.lastContacted);
+    // If this project is associated with a client, update the client's last contacted date
+    if (newProject.clientId && newProject.lastContacted) {
+      await updateClientLastContacted(newProject.clientId, newProject.lastContacted);
+    }
+    
+    return newProject;
+  } catch (error) {
+    console.error("Error creating project:", error);
+    throw error;
   }
-  
-  return newProject;
 }
 
 async function updateProject(id: number, data: any) {
