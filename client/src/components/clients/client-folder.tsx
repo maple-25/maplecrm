@@ -4,10 +4,10 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Pencil, FolderOpen, Plus } from "lucide-react";
+import { Pencil, FolderOpen, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -30,6 +30,7 @@ const editClientSchema = z.object({
 
 export default function ClientFolder({ client, onOpenFolder }: ClientFolderProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof editClientSchema>>({
@@ -60,8 +61,33 @@ export default function ClientFolder({ client, onOpenFolder }: ClientFolderProps
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/clients/${client.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
+      setIsDeleteDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Client deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete client",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onEditClient = (data: z.infer<typeof editClientSchema>) => {
     updateMutation.mutate(data);
+  };
+
+  const onDeleteClient = () => {
+    deleteMutation.mutate();
   };
 
   const getStatusClass = (status?: string) => {
@@ -108,6 +134,14 @@ export default function ClientFolder({ client, onOpenFolder }: ClientFolderProps
               className="text-gray-400 hover:text-gray-500"
             >
               <Pencil className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsDeleteDialogOpen(true)}
+              className="text-red-400 hover:text-red-500"
+            >
+              <Trash2 className="w-5 h-5" />
             </Button>
           </div>
         </CardHeader>
@@ -188,6 +222,32 @@ export default function ClientFolder({ client, onOpenFolder }: ClientFolderProps
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Client</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this client? This action cannot be undone and will delete all associated documents and projects.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex space-x-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={onDeleteClient}
+              variant="destructive"
+              disabled={deleteMutation.isPending}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
