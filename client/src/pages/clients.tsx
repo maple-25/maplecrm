@@ -32,11 +32,11 @@ export default function Clients() {
     },
   });
 
-  const { data: activeClients, isLoading: isLoadingActive } = useQuery({
+  const { data: activeClients = [], isLoading: isLoadingActive } = useQuery({
     queryKey: ["/api/clients?status=active"],
   });
 
-  const { data: pastClients, isLoading: isLoadingPast } = useQuery({
+  const { data: pastClients = [], isLoading: isLoadingPast } = useQuery({
     queryKey: ["/api/clients?status=completed"],
   });
 
