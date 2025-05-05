@@ -34,7 +34,7 @@ const projectFormSchema = z.object({
   lastContacted: z.date().optional(),
   status: z.string(),
   activeStage: z.string().optional(),
-  hasInvoice: z.boolean().default(false),
+  hasInvoice: z.enum(["yes", "no"]).default("no"),
   assignedToId: z.string(),
 });
 
@@ -54,7 +54,7 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
       lastContacted: undefined,
       status: "active",
       activeStage: "",
-      hasInvoice: false,
+      hasInvoice: "no",
       assignedToId: teamMembers[0]?.id?.toString() || "",
     },
   });
@@ -72,7 +72,7 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
         lastContacted: project.lastContacted ? new Date(project.lastContacted) : undefined,
         status: project.status || "active",
         activeStage: project.activeStage || "",
-        hasInvoice: Boolean(project.hasInvoice),
+        hasInvoice: project.hasInvoice || "no",
         assignedToId: project.assignedToId?.toString() || (teamMembers[0]?.id?.toString() || ""),
       });
     } else {
@@ -86,7 +86,7 @@ export default function ProjectForm({ open, onClose, project, teamMembers }: Pro
         lastContacted: undefined,
         status: "active",
         activeStage: "",
-        hasInvoice: false,
+        hasInvoice: "no",
         assignedToId: teamMembers[0]?.id?.toString() || "",
       });
     }
