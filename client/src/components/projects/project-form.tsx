@@ -31,6 +31,8 @@ const projectFormSchema = z.object({
   category: z.string().optional(),
   lastContacted: z.date().optional(),
   status: z.string(),
+  activeStage: z.string().optional(),
+  hasInvoice: z.boolean().default(false),
   assignedToId: z.string(),
 });
 
