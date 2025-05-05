@@ -29,70 +29,74 @@ interface ProjectFilterOptions {
 }
 
 async function getProjects(filters: ProjectFilterOptions = {}) {
-  let query = db.select().from(projects)
-    .leftJoin(teamMembers, eq(projects.assignedToId, teamMembers.id))
-    .orderBy(desc(projects.updatedAt));
-
-  // Apply filters
-  if (filters.status && filters.status !== 'all') {
-    query = query.where(eq(projects.status, filters.status));
-  }
-
-  if (filters.assignedToId && filters.assignedToId !== 'all') {
-    query = query.where(eq(projects.assignedToId, parseInt(filters.assignedToId)));
-  }
-
-  if (filters.type && filters.type !== 'all') {
-    query = query.where(eq(projects.type, filters.type));
-  }
-
-  if (filters.lastContacted && filters.lastContacted !== 'all') {
-    const today = new Date();
-    let dateFilter;
-
-    switch (filters.lastContacted) {
-      case 'today':
-        dateFilter = format(today, 'yyyy-MM-dd');
-        query = query.where(gte(projects.lastContacted, new Date(dateFilter)));
-        break;
-      case 'week':
-        dateFilter = startOfWeek(today);
-        query = query.where(gte(projects.lastContacted, dateFilter));
-        break;
-      case 'month':
-        dateFilter = startOfMonth(today);
-        query = query.where(gte(projects.lastContacted, dateFilter));
-        break;
-      case 'quarter':
-        dateFilter = startOfQuarter(today);
-        query = query.where(gte(projects.lastContacted, dateFilter));
-        break;
+  try {
+    console.log("Getting projects with filters:", filters);
+    
+    let query = db.query.projects.findMany({
+      with: {
+        assignedTo: true
+      },
+      orderBy: [desc(projects.updatedAt)]
+    });
+    
+    // We will apply filters manually after retrieving data
+    const results = await query;
+    console.log(`Retrieved ${results.length} projects`);
+    
+    // Apply filters in-memory
+    let filteredResults = [...results];
+    
+    if (filters.status && filters.status !== 'all') {
+      filteredResults = filteredResults.filter(p => p.status === filters.status);
     }
+    
+    if (filters.assignedToId && filters.assignedToId !== 'all') {
+      const assignedId = parseInt(filters.assignedToId);
+      filteredResults = filteredResults.filter(p => p.assignedToId === assignedId);
+    }
+    
+    if (filters.type && filters.type !== 'all') {
+      filteredResults = filteredResults.filter(p => p.type === filters.type);
+    }
+    
+    if (filters.lastContacted && filters.lastContacted !== 'all') {
+      const today = new Date();
+      let dateFilter;
+
+      switch (filters.lastContacted) {
+        case 'today':
+          dateFilter = format(today, 'yyyy-MM-dd');
+          filteredResults = filteredResults.filter(p => 
+            p.lastContacted && new Date(p.lastContacted) >= new Date(dateFilter)
+          );
+          break;
+        case 'week':
+          dateFilter = startOfWeek(today);
+          filteredResults = filteredResults.filter(p => 
+            p.lastContacted && new Date(p.lastContacted) >= dateFilter
+          );
+          break;
+        case 'month':
+          dateFilter = startOfMonth(today);
+          filteredResults = filteredResults.filter(p => 
+            p.lastContacted && new Date(p.lastContacted) >= dateFilter
+          );
+          break;
+        case 'quarter':
+          dateFilter = startOfQuarter(today);
+          filteredResults = filteredResults.filter(p => 
+            p.lastContacted && new Date(p.lastContacted) >= dateFilter
+          );
+          break;
+      }
+    }
+    
+    console.log(`After filtering: ${filteredResults.length} projects`);
+    return filteredResults;
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    throw error;
   }
-
-  const result = await query;
-
-  // Transform the result to match the expected structure
-  return result.map(row => ({
-    id: row.projects.id,
-    name: row.projects.name,
-    phoneNumber: row.projects.phoneNumber,
-    poc: row.projects.poc,
-    type: row.projects.type,
-    affiliatePartner: row.projects.affiliatePartner,
-    category: row.projects.category,
-    lastContacted: row.projects.lastContacted,
-    status: row.projects.status,
-    assignedToId: row.projects.assignedToId,
-    clientId: row.projects.clientId,
-    createdAt: row.projects.createdAt,
-    updatedAt: row.projects.updatedAt,
-    assignedTo: row.team_members ? {
-      id: row.team_members.id,
-      name: row.team_members.name,
-      avatarUrl: row.team_members.avatarUrl
-    } : null
-  }));
 }
 
 async function getProjectsByAffiliatePartner(partner: string) {
@@ -325,27 +329,40 @@ async function deleteProject(id: number) {
 
 // Clients
 async function getClients(status?: string) {
-  let query = db.select().from(clients);
-  
-  if (status) {
-    query = query.where(eq(clients.status, status));
-  }
-  
-  // Get document counts for each client
-  const result = await query.orderBy(desc(clients.updatedAt));
-  
-  // Add document count to each client
-  const clientsWithDocs = await Promise.all(result.map(async (client) => {
-    const docCount = await db.select({ count: count() }).from(documents)
-      .where(eq(documents.clientId, client.id));
+  try {
+    console.log("Getting clients with status filter:", status);
     
-    return {
-      ...client,
-      documentCount: docCount[0].count || 0
-    };
-  }));
-  
-  return clientsWithDocs;
+    // Get all clients
+    const result = await db.query.clients.findMany({
+      orderBy: [desc(clients.updatedAt)]
+    });
+    
+    console.log(`Retrieved ${result.length} clients before filtering`);
+    
+    // Apply status filter if provided
+    let filteredResults = result;
+    if (status && status !== 'all') {
+      filteredResults = result.filter(client => client.status === status);
+      console.log(`After status filtering: ${filteredResults.length} clients`);
+    }
+    
+    // Add document count to each client
+    const clientsWithDocs = await Promise.all(filteredResults.map(async (client) => {
+      const docCount = await db.select({ count: count() }).from(documents)
+        .where(eq(documents.clientId, client.id));
+      
+      return {
+        ...client,
+        documentCount: docCount[0].count || 0
+      };
+    }));
+    
+    console.log(`Returning ${clientsWithDocs.length} clients with document counts`);
+    return clientsWithDocs;
+  } catch (error) {
+    console.error("Error fetching clients:", error);
+    throw error;
+  }
 }
 
 async function getClientById(id: number) {
@@ -368,18 +385,83 @@ async function getClientById(id: number) {
 }
 
 async function createClient(data: any) {
-  const validatedData = clientInsertSchema.parse(data);
-  const [newClient] = await db.insert(clients).values(validatedData).returning();
-  return newClient;
+  try {
+    console.log("Creating client with data:", data);
+    
+    // Create a clean data object for validation
+    const insertData: Record<string, any> = {
+      name: data.name || '',
+      status: data.status || 'active',
+    };
+    
+    // Handle date properly
+    if (data.lastContacted) {
+      if (typeof data.lastContacted === 'string') {
+        insertData.lastContacted = new Date(data.lastContacted);
+      } else if (data.lastContacted instanceof Date) {
+        insertData.lastContacted = data.lastContacted;
+      }
+    } else {
+      insertData.lastContacted = null;
+    }
+    
+    // Set timestamps
+    insertData.createdAt = new Date();
+    insertData.updatedAt = new Date();
+    
+    console.log("Clean client data for insertion:", insertData);
+    
+    // Validate and insert
+    const validatedData = clientInsertSchema.parse(insertData);
+    const [newClient] = await db.insert(clients).values(validatedData).returning();
+    
+    console.log("Client created successfully:", newClient);
+    return newClient;
+  } catch (error) {
+    console.error("Error creating client:", error);
+    throw error;
+  }
 }
 
 async function updateClient(id: number, data: any) {
-  const [updatedClient] = await db.update(clients)
-    .set(data)
-    .where(eq(clients.id, id))
-    .returning();
-  
-  return updatedClient;
+  try {
+    console.log(`Updating client ${id} with data:`, data);
+    
+    // Create a clean data object with only the fields we want to update
+    const updateData: Record<string, any> = {};
+    
+    // Handle string fields
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.status !== undefined) updateData.status = data.status;
+    
+    // Handle date conversion properly
+    if (data.lastContacted !== undefined) {
+      if (data.lastContacted === null) {
+        updateData.lastContacted = null;
+      } else if (typeof data.lastContacted === 'string') {
+        updateData.lastContacted = new Date(data.lastContacted);
+      } else if (data.lastContacted instanceof Date) {
+        updateData.lastContacted = data.lastContacted;
+      }
+    }
+    
+    // Set the updated timestamp
+    updateData.updatedAt = new Date();
+    
+    console.log("Clean client update data:", updateData);
+    
+    // Update the client
+    const [updatedClient] = await db.update(clients)
+      .set(updateData)
+      .where(eq(clients.id, id))
+      .returning();
+    
+    console.log("Client updated successfully:", updatedClient);
+    return updatedClient;
+  } catch (error) {
+    console.error(`Error updating client ${id}:`, error);
+    throw error;
+  }
 }
 
 async function deleteClient(id: number) {
