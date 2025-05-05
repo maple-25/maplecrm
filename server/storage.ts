@@ -133,26 +133,56 @@ async function getProjectsByClientId(clientId: number) {
 
 async function createProject(data: any) {
   try {
-    // Pre-process date and boolean fields
-    const processedData = {
-      ...data,
-      // Convert ISO string dates to Date objects or null
-      lastContacted: data.lastContacted ? new Date(data.lastContacted) : null,
-      // Ensure hasInvoice is a boolean
-      hasInvoice: data.hasInvoice ? Boolean(data.hasInvoice) : false
+    // Create a clean data object with only the fields we want to insert
+    const insertData: Record<string, any> = {
+      name: data.name || '',
+      phoneNumber: data.phoneNumber || '',
+      poc: data.poc || '',
+      type: data.type || 'direct',
+      status: data.status || 'active',
+      assignedToId: typeof data.assignedToId === 'string' 
+        ? parseInt(data.assignedToId) 
+        : (data.assignedToId || 1) // Default to first team member if not specified
     };
     
-    console.log("Creating project with processed data:", processedData);
+    // Optional fields
+    if (data.affiliatePartner) insertData.affiliatePartner = data.affiliatePartner;
+    if (data.category) insertData.category = data.category;
+    if (data.activeStage) insertData.activeStage = data.activeStage;
+    
+    // Handle date properly
+    if (data.lastContacted) {
+      if (typeof data.lastContacted === 'string') {
+        insertData.lastContacted = new Date(data.lastContacted);
+      } else if (data.lastContacted instanceof Date) {
+        insertData.lastContacted = data.lastContacted;
+      }
+    } else {
+      insertData.lastContacted = null;
+    }
+    
+    // Handle boolean
+    insertData.hasInvoice = data.hasInvoice === true || 
+                           data.hasInvoice === 'true' || 
+                           data.hasInvoice === 1;
+    
+    // Set timestamps
+    insertData.createdAt = new Date();
+    insertData.updatedAt = new Date();
+    
+    console.log("Creating project with clean data:", insertData);
     
     // Validate data
-    const validatedData = projectInsertSchema.parse(processedData);
+    const validatedData = projectInsertSchema.parse(insertData);
     
     // Handle client association: if it's a new direct project with no client, we might want to create one
     if (data.type === 'direct' && !data.clientId && data.name) {
       const [newClient] = await db.insert(clients).values({
         name: data.name,
-        status: data.status,
-        lastContacted: processedData.lastContacted
+        status: data.status || 'active',
+        lastContacted: insertData.lastContacted || null,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }).returning();
       
       validatedData.clientId = newClient.id;
@@ -184,26 +214,50 @@ async function updateProject(id: number, data: any) {
       throw new Error(`Project with ID ${id} not found`);
     }
     
-    // Process the data to handle date and boolean fields correctly
-    const processedData = { ...data };
+    // Create a clean data object with only the fields we want to update
+    const updateData: Record<string, any> = {};
     
-    // Handle date conversion if lastContacted is provided
-    if (processedData.lastContacted) {
-      if (typeof processedData.lastContacted === 'string') {
-        processedData.lastContacted = new Date(processedData.lastContacted);
+    // Handle string fields
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
+    if (data.poc !== undefined) updateData.poc = data.poc;
+    if (data.type !== undefined) updateData.type = data.type;
+    if (data.affiliatePartner !== undefined) updateData.affiliatePartner = data.affiliatePartner;
+    if (data.category !== undefined) updateData.category = data.category;
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.activeStage !== undefined) updateData.activeStage = data.activeStage;
+    
+    // Handle date conversion properly
+    if (data.lastContacted !== undefined) {
+      if (data.lastContacted === null) {
+        updateData.lastContacted = null;
+      } else if (typeof data.lastContacted === 'string') {
+        updateData.lastContacted = new Date(data.lastContacted);
+      } else if (data.lastContacted instanceof Date) {
+        updateData.lastContacted = data.lastContacted;
       }
     }
     
     // Handle boolean conversion for hasInvoice
-    if (processedData.hasInvoice !== undefined) {
-      processedData.hasInvoice = Boolean(processedData.hasInvoice);
+    if (data.hasInvoice !== undefined) {
+      updateData.hasInvoice = data.hasInvoice === true || data.hasInvoice === 'true' || data.hasInvoice === 1;
     }
     
-    console.log("Processed update data:", processedData);
+    // Handle numeric conversion
+    if (data.assignedToId !== undefined) {
+      updateData.assignedToId = typeof data.assignedToId === 'string' 
+        ? parseInt(data.assignedToId) 
+        : data.assignedToId;
+    }
+    
+    // Set the updated timestamp
+    updateData.updatedAt = new Date();
+    
+    console.log("Clean update data:", updateData);
     
     // Update the project
     const [updatedProject] = await db.update(projects)
-      .set(processedData)
+      .set(updateData)
       .where(eq(projects.id, id))
       .returning();
 
