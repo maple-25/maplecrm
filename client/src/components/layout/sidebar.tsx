@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import Logo from "./logo";
 
 interface NavItem {
   label: string;
@@ -62,7 +63,7 @@ export default function Sidebar() {
     <div className="hidden md:flex md:flex-shrink-0">
       <div className="flex flex-col w-64 bg-sidebar">
         <div className="flex items-center justify-center h-16 bg-sidebar-accent">
-          <h1 className="text-xl font-bold text-white">IB CRM</h1>
+          <Logo className="py-2" textClassName="text-white text-lg" />
         </div>
         <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto">
           <nav className="flex-1 px-2 space-y-1">
