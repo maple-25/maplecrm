@@ -25,7 +25,8 @@ export default function Projects() {
   });
 
   const { data: projects, isLoading: isLoadingProjects } = useQuery({
-    queryKey: [`/api/projects?${queryParams.toString()}`],
+    queryKey: ["/api/projects", queryParams.toString()],
+    refetchOnWindowFocus: true
   });
 
   const { data: teamMembers } = useQuery({

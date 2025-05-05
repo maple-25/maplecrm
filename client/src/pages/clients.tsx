@@ -53,9 +53,11 @@ export default function Clients() {
       });
     },
     onSuccess: () => {
-      // Invalidate clients cache to refresh the data
+      // Invalidate all clients-related queries to ensure UI updates properly
       queryClient.invalidateQueries({ queryKey: ["/api/clients"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/clients?status=${activeTab}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients?status=active"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clients?status=completed"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats/clients"] });
       
       setIsAddClientOpen(false);
       form.reset();
